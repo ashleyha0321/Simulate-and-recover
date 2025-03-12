@@ -11,14 +11,19 @@ The EZ Diffusion Model is used to simplify the standard Drift Diffusion Model (D
 1. True parameters are randomly generated, falling within the required ranges of:
 
    Boundary separation (α): [0.5,2]
+
+
    Drift Rate (ν): [0.5, 2]
+
+
    Nondecision time (τ): [0.1, 0.5]
 
-2. Use forward equations to compute the predicted summary statistics, which include accuracy, mean RT, and variance.
-3. Simulate the observed data through sampling from distributions.
-4. Apply inverse equations in order to estimate the parameters from observed distributions.
-5. Repeat the process for 1000 iterations at each sample size of N = 10, 40, and 4000 — this results in a total of 3000 iterations.
-6. Use the results to analyze the bias and squared error to get a measure of the model's accuracy/performance.
+
+3. Use forward equations to compute the predicted summary statistics, which include accuracy, mean RT, and variance.
+4. Simulate the observed data through sampling from distributions.
+5. Apply inverse equations in order to estimate the parameters from observed distributions.
+6. Repeat the process for 1000 iterations at each sample size of N = 10, 40, and 4000 — this results in a total of 3000 iterations.
+7. Use the results to analyze the bias and squared error to get a measure of the model's accuracy/performance.
 
 ## Results & Discussion
 The results from running the iterations is stored in a output/version.md. The results obtained are as follows:
@@ -27,7 +32,7 @@ The results from running the iterations is stored in a output/version.md. The re
 
 Mean Bias: [0.956, -12.91, -0.319]
 
-Mean Squared Error: [1.040, 473.41, 0.147]
+Mean Squared Error: [1.03994744e+00, 4.73409682e+02, 1.46553735e-01]
 
 ### Sample Size 40:
 
