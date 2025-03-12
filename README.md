@@ -21,3 +21,24 @@ The EZ Diffusion Model is used to simplify the standard Drift Diffusion Model (D
 6. Use the results to analyze the bias and squared error to get a measure of the model's accuracy/performance.
 
 ## Results
+The results from running the iterations is stored in a output/version.md. The results obtained are as follows:
+
+### Sample Size 10:
+
+Mean Bias: [0.956, -12.91, -0.319]
+
+Mean Squared Error: [1.040, 473.41, 0.147]
+
+### Sample Size 40:
+
+Mean Bias: [0.939, -6.65, -0.305]
+
+Mean Squared Error: [1.046, 82.67, 0.141]
+
+### Sample Size 4000:
+
+Mean Bias: [0.959, -5.21, -0.322]
+
+Mean Squared Error: [1.063, 41.90, 0.134]
+
+
