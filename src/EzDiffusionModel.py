@@ -62,13 +62,6 @@ def run_simulation(iterations=1000, sample_sizes=[10, 40, 4000]):
         }
     return results
 
-#if __name__ == "__main__":
-    #results = run_simulation()
-    #for N, metrics in results.items():
-        #print(f"Sample Size {N}:")
-        #print(f"  Mean Bias: {metrics['mean_bias']}")
-        #print(f"  Mean Squared Error: {metrics['mean_squared_error']}")
-
 if __name__ == "__main__":
     results = run_simulation()
 
