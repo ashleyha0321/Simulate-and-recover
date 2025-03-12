@@ -1,15 +1,12 @@
 #!/bin/bash
 
-# Run the full simulation
-python3 -c '
-from src.EzDiffusionModel import run_simulation
+set -e
 
-results = run_simulation(iterations=1000, sample_sizes=[10, 40, 4000])
+# Navigate to the script directory
+cd "$(dirname "$0")"
 
-with open("version.md", "w") as file:
-    for N, metrics in results.items():
-        file.write(f"### Sample Size {N}:\n")
-        file.write(f"- **Mean Bias:** {metrics["mean_bias"]}\n")
-        file.write(f"- **Mean Squared Error:** {metrics["mean_squared_error"]}\n\n")'
+# Run the EZ Diffusion Model simulation
+echo "Running EZ Diffusion Model simulation..."
+/usr/bin/python3 ../src/EzDiffusionModel.py
 
 

@@ -2,20 +2,22 @@ import numpy as np
 import scipy.stats as stats
 import os
 
-# Define parameter ranges
-BOUNDARY_RANGE = (0.5, 2)
-DRIFT_RANGE = (0.5, 2)
-NONDECISION_RANGE = (0.1, 0.5)
+# classes were constructed with the assistance of chatGPT
 
-# Sample sizes to test
-N_VALUES = [10, 40, 4000]
-ITERATIONS = 1000
+# parameter ranges definitions
+boundary_range = (0.5, 2)
+drift_range = (0.5, 2)
+nondecision_range = (0.1, 0.5)
+
+# sample sizes
+n_values = [10, 40, 4000]
+iterations = 1000
 
 def generate_parameters():
     """Generate random parameters within the specified ranges."""
-    a = np.random.uniform(*BOUNDARY_RANGE)
-    v = np.random.uniform(*DRIFT_RANGE)
-    t = np.random.uniform(*NONDECISION_RANGE)
+    a = np.random.uniform(*boundary_range)
+    v = np.random.uniform(*drift_range)
+    t = np.random.uniform(*nondecision_range)
     return a, v, t
 
 def forward_equations(a, v, t):
@@ -55,17 +57,17 @@ def inverse_equations(R_obs, M_obs, V_obs):
 def run_simulation():
     """Run the simulate-and-recover process for multiple iterations and sample sizes."""
     results = {}
-    for N in N_VALUES:
+    for N in n_values:
         biases = []
         squared_errors = []
-        for _ in range(ITERATIONS):
+        for _ in range(iterations):
             true_a, true_v, true_t = generate_parameters()
             R_pred, M_pred, V_pred = forward_equations(true_a, true_v, true_t)
             R_obs, M_obs, V_obs = simulate_observed_data(R_pred, M_pred, V_pred, N)
             est_a, est_v, est_t = inverse_equations(R_obs, M_obs, V_obs)
             
             if np.isnan(est_a) or np.isnan(est_v) or np.isnan(est_t):
-                continue  # Skip invalid iterations
+                continue  
             
             bias = np.array([true_a - est_a, true_v - est_v, true_t - est_t])
             squared_error = bias**2
@@ -86,7 +88,7 @@ def run_simulation():
                 "mean_squared_error": squared_errors.mean(axis=0)
             }
     
-    # Write results to version.md
+    # printing results to version.md
     with open("version.md", "w") as file:
         for N, metrics in results.items():
             file.write(f"### Sample Size {N}:\n")  
