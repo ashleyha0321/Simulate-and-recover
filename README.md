@@ -20,7 +20,7 @@ The EZ Diffusion Model is used to simplify the standard Drift Diffusion Model (D
 5. Repeat the process for 1000 iterations at each sample size of N = 10, 40, and 4000 — this results in a total of 3000 iterations.
 6. Use the results to analyze the bias and squared error to get a measure of the model's accuracy/performance.
 
-## Results
+## Results & Discussion
 The results from running the iterations is stored in a output/version.md. The results obtained are as follows:
 
 ### Sample Size 10:
@@ -40,5 +40,7 @@ Mean Squared Error: [1.046, 82.67, 0.141]
 Mean Bias: [0.959, -5.21, -0.322]
 
 Mean Squared Error: [1.063, 41.90, 0.134]
+
+For each sample size, the drift rate (v) seems to be fairly consistent, being overestimated at about 0.95 units above the true v used in the simulation. With the boundary separation (a), there is a notable bias with a being -12.91 at N = 10 compared to a being -5.21 at N = 4000. This indicates that the estimation of a improves as the sample becomes larger. The nondecision time bias is much more miniscule ranging from -0.32 to 0.30, which means there is a slight underestimation for t. 
 
 
