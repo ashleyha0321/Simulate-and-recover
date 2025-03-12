@@ -75,8 +75,7 @@ if __name__ == "__main__":
     # Open version.md in write mode
     with open("version.md", "w") as file:
         for N, metrics in results.items():
-            file.write(f"Sample Size {N}:\n")
-            file.write(f"  Mean Bias: {metrics['mean_bias']}\n")
-            file.write(f"  Mean Squared Error: {metrics['mean_squared_error']}\n")
-    
-    print("Results written to version.md")
+            file.write(f"### Sample Size {N}:\n")  
+            file.write(f"- **Mean Bias:** {metrics['mean_bias']}\n")  
+            file.write(f"- **Mean Squared Error:** {metrics['mean_squared_error']}\n\n")  
+
