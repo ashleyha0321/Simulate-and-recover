@@ -1,74 +1,101 @@
 import numpy as np
-from scipy.stats import binom, norm, gamma
+import scipy.stats as stats
+import os
 
-def forward_equations(v, a, t):
-    """Compute predicted summary statistics from EZ diffusion model parameters."""
+# Define parameter ranges
+BOUNDARY_RANGE = (0.5, 2)
+DRIFT_RANGE = (0.5, 2)
+NONDECISION_RANGE = (0.1, 0.5)
+
+# Sample sizes to test
+N_VALUES = [10, 40, 4000]
+ITERATIONS = 1000
+
+def generate_parameters():
+    """Generate random parameters within the specified ranges."""
+    a = np.random.uniform(*BOUNDARY_RANGE)
+    v = np.random.uniform(*DRIFT_RANGE)
+    t = np.random.uniform(*NONDECISION_RANGE)
+    return a, v, t
+
+def forward_equations(a, v, t):
+    """Compute the forward equations to obtain predicted summary statistics."""
     y = np.exp(-a * v)
     R_pred = 1 / (y + 1)
     M_pred = t + (a / (2 * v)) * ((1 - y) / (1 + y))
-    V_pred = (a / (2 * v**3)) * ((1 - 2 * a * v * y - y**2) / (y + 1)**2)
+    V_pred = (a / (2 * v**3)) * ((1 - 2 * a * v * y - y**2) / ((y + 1)**2))
     return R_pred, M_pred, V_pred
 
+def simulate_observed_data(R_pred, M_pred, V_pred, N):
+    """Simulate observed data using sampling distributions."""
+    T_obs = np.random.binomial(N, R_pred)
+    R_obs = T_obs / N
+    R_obs = np.clip(R_obs, 1e-5, 1 - 1e-5)  # Avoids exact 0 or 1
+    M_obs = np.random.normal(M_pred, np.sqrt(max(V_pred / N, 1e-5)))
+    V_obs = np.random.gamma(max((N - 1) / 2, 1e-5), max((2 * V_pred) / (N - 1), 1e-5))
+    return R_obs, M_obs, V_obs
+
 def inverse_equations(R_obs, M_obs, V_obs):
-    """Recover EZ diffusion model parameters from observed summary statistics."""
-    R_obs = np.clip(R_obs, 1e-6, 1 - 1e-6)  # Prevent division errors
+    """Compute the inverse equations to estimate model parameters."""
     L = np.log(R_obs / (1 - R_obs))
-
-    # Prevent invalid sqrt inputs
-    sqrt_term = L * (R_obs**2 * L - R_obs * L + R_obs - 0.5) / V_obs
-    sqrt_term = max(sqrt_term, 1e-6)  # Ensure non-negative
-
-    v_est = np.sign(R_obs - 0.5) * 4 * np.sqrt(sqrt_term)
+    L = np.clip(L, -10, 10)  # Prevent extreme values
+    
+    if V_obs <= 0:
+        return np.nan, np.nan, np.nan
+    
+    v_est = np.sign(R_obs - 0.5) * 4 * np.sqrt(max(L * (R_obs**2 * L - R_obs * L + R_obs - 0.5) / V_obs, 1e-5))
     if np.isnan(v_est) or v_est == 0:
-        v_est = 1e-6  # Small fallback value
-
+        return np.nan, np.nan, np.nan
+    
     a_est = L / v_est
     t_est = M_obs - (a_est / (2 * v_est)) * ((1 - np.exp(-v_est * a_est)) / (1 + np.exp(-v_est * a_est)))
+    
+    return a_est, v_est, t_est
 
-    return v_est, a_est, t_est
-
-def sample_observed_statistics(R_pred, M_pred, V_pred, N):
-    """Simulate observed summary statistics from the predicted values."""
-    T_obs = binom.rvs(N, R_pred) / N
-    M_obs = norm.rvs(M_pred, np.sqrt(V_pred / N))
-    V_obs = gamma.rvs((N - 1) / 2, scale=(2 * V_pred / (N - 1)))
-    return T_obs, M_obs, V_obs
-
-def simulate_and_recover(N, v_true, a_true, t_true):
-    """Perform one simulate-and-recover iteration."""
-    R_pred, M_pred, V_pred = forward_equations(v_true, a_true, t_true)
-    R_obs, M_obs, V_obs = sample_observed_statistics(R_pred, M_pred, V_pred, N)
-    v_est, a_est, t_est = inverse_equations(R_obs, M_obs, V_obs)
-    bias = np.array([v_true - v_est, a_true - a_est, t_true - t_est])
-    squared_error = bias ** 2
-    return bias, squared_error
-
-def run_simulation(iterations=1000, sample_sizes=[10, 40, 4000]):
-    """Run the full simulate-and-recover experiment."""
+def run_simulation():
+    """Run the simulate-and-recover process for multiple iterations and sample sizes."""
     results = {}
-    for N in sample_sizes:
+    for N in N_VALUES:
         biases = []
         squared_errors = []
-        for _ in range(iterations):
-            v_true = np.random.uniform(0.5, 2)
-            a_true = np.random.uniform(0.5, 2)
-            t_true = np.random.uniform(0.1, 0.5)
-            bias, se = simulate_and_recover(N, v_true, a_true, t_true)
+        for _ in range(ITERATIONS):
+            true_a, true_v, true_t = generate_parameters()
+            R_pred, M_pred, V_pred = forward_equations(true_a, true_v, true_t)
+            R_obs, M_obs, V_obs = simulate_observed_data(R_pred, M_pred, V_pred, N)
+            est_a, est_v, est_t = inverse_equations(R_obs, M_obs, V_obs)
+            
+            if np.isnan(est_a) or np.isnan(est_v) or np.isnan(est_t):
+                continue  # Skip invalid iterations
+            
+            bias = np.array([true_a - est_a, true_v - est_v, true_t - est_t])
+            squared_error = bias**2
+            
             biases.append(bias)
-            squared_errors.append(se)
-        results[N] = {
-            "mean_bias": np.mean(biases, axis=0),
-            "mean_squared_error": np.mean(squared_errors, axis=0)
-        }
-    return results
-
-if __name__ == "__main__":
-    results = run_simulation()
-
-    # Open version.md in write mode
+            squared_errors.append(squared_error)
+        
+        if len(biases) == 0:
+            results[N] = {
+                "mean_bias": np.array([np.nan, np.nan, np.nan]),
+                "mean_squared_error": np.array([np.nan, np.nan, np.nan])
+            }
+        else:
+            biases = np.array(biases)
+            squared_errors = np.array(squared_errors)
+            results[N] = {
+                "mean_bias": biases.mean(axis=0),
+                "mean_squared_error": squared_errors.mean(axis=0)
+            }
+    
+    # Write results to version.md
     with open("version.md", "w") as file:
         for N, metrics in results.items():
             file.write(f"### Sample Size {N}:\n")  
             file.write(f"- **Mean Bias:** {metrics['mean_bias']}\n")  
             file.write(f"- **Mean Squared Error:** {metrics['mean_squared_error']}\n\n")  
+    
+    return results
 
+if __name__ == "__main__":
+    results = run_simulation()
+    for N, res in results.items():
+        print(f"N={N} - Bias Mean: {res['mean_bias']}, Squared Error Mean: {res['mean_squared_error']}")

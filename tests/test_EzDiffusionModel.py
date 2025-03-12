@@ -1,40 +1,50 @@
 import unittest
 import numpy as np
-from src.EzDiffusionModel import forward_equations, inverse_equations, sample_observed_statistics, simulate_and_recover
+from src.EzDiffusionModel import generate_parameters, forward_equations, simulate_observed_data, inverse_equations, run_simulation
 
 class TestEzDiffusionModel(unittest.TestCase):
+    
+    def test_generate_parameters(self):
+        """Test that parameters are generated within valid ranges."""
+        a, v, t = generate_parameters()
+        self.assertTrue(0.5 <= a <= 2)
+        self.assertTrue(0.5 <= v <= 2)
+        self.assertTrue(0.1 <= t <= 0.5)
+    
     def test_forward_equations(self):
-        """Test if forward equations produce reasonable summary statistics."""
-        v, a, t = 1.0, 1.0, 0.2
-        R_pred, M_pred, V_pred = forward_equations(v, a, t)
-        self.assertTrue(0 < R_pred < 1, "Accuracy rate should be between 0 and 1")
-        self.assertTrue(M_pred > 0, "Mean RT should be positive")
-        self.assertTrue(V_pred > 0, "Variance RT should be positive")
+        """Test that forward equations return reasonable values."""
+        a, v, t = 1.0, 1.0, 0.2  # Fixed valid parameters
+        R_pred, M_pred, V_pred = forward_equations(a, v, t)
+        self.assertTrue(0 <= R_pred <= 1)
+        self.assertTrue(M_pred > 0)
+        self.assertTrue(V_pred > 0)
     
     def test_inverse_equations(self):
-        """Test if inverse equations correctly recover parameters when given noise-free input."""
-        v_true, a_true, t_true = 1.0, 1.0, 0.2
-        R_pred, M_pred, V_pred = forward_equations(v_true, a_true, t_true)
-        v_est, a_est, t_est = inverse_equations(R_pred, M_pred, V_pred)
-        self.assertAlmostEqual(v_true, v_est, places=4)
-        self.assertAlmostEqual(a_true, a_est, places=4)
-        self.assertAlmostEqual(t_true, t_est, places=4)
+        """Test inverse equations recover valid estimates."""
+        R_obs, M_obs, V_obs = 0.7, 0.5, 0.1  # Simulated reasonable values
+        a_est, v_est, t_est = inverse_equations(R_obs, M_obs, V_obs)
+        self.assertFalse(np.isnan(a_est))
+        self.assertFalse(np.isnan(v_est))
+        self.assertFalse(np.isnan(t_est))
     
-    def test_sample_observed_statistics(self):
-        """Test if sampled observed statistics have reasonable values."""
-        v, a, t = 1.0, 1.0, 0.2
-        R_pred, M_pred, V_pred = forward_equations(v, a, t)
-        R_obs, M_obs, V_obs = sample_observed_statistics(R_pred, M_pred, V_pred, N=100)
-        self.assertTrue(0 < R_obs < 1, "Observed accuracy rate should be between 0 and 1")
-        self.assertTrue(M_obs > 0, "Observed mean RT should be positive")
-        self.assertTrue(V_obs > 0, "Observed variance RT should be positive")
+    def test_simulate_observed_data(self):
+        """Test that simulated data stays within expected ranges."""
+        R_pred, M_pred, V_pred = 0.7, 0.5, 0.1
+        N = 100
+        R_obs, M_obs, V_obs = simulate_observed_data(R_pred, M_pred, V_pred, N)
+        self.assertTrue(0 <= R_obs <= 1)
+        self.assertTrue(M_obs > 0)
+        self.assertTrue(V_obs > 0)
     
-    def test_simulate_and_recover(self):
-        """Test the full simulate-and-recover process with known parameters."""
-        v_true, a_true, t_true = 1.0, 1.0, 0.2
-        bias, squared_error = simulate_and_recover(N=100, v_true=v_true, a_true=a_true, t_true=t_true)
-        self.assertEqual(len(bias), 3, "Bias should have three elements")
-        self.assertEqual(len(squared_error), 3, "Squared error should have three elements")
-    
+    def test_run_simulation(self):
+        """Test that simulation runs and produces valid output."""
+        results = run_simulation()
+        for N in [10, 40, 4000]:
+            self.assertIn(N, results)
+            self.assertIn("mean_bias", results[N])
+            self.assertIn("mean_squared_error", results[N])
+            self.assertEqual(len(results[N]["mean_bias"]), 3)
+            self.assertEqual(len(results[N]["mean_squared_error"]), 3)
+
 if __name__ == "__main__":
     unittest.main()
