@@ -14,14 +14,14 @@ n_values = [10, 40, 4000]
 iterations = 1000
 
 def generate_parameters():
-    """Generate random parameters within the specified ranges."""
+    """Generate random parameters within the required ranges."""
     a = np.random.uniform(*boundary_range)
     v = np.random.uniform(*drift_range)
     t = np.random.uniform(*nondecision_range)
     return a, v, t
 
 def forward_equations(a, v, t):
-    """Compute the forward equations to obtain predicted summary statistics."""
+    """Compute the forward equations for predicted summary statistics."""
     y = np.exp(-a * v)
     R_pred = 1 / (y + 1)
     M_pred = t + (a / (2 * v)) * ((1 - y) / (1 + y))
@@ -29,7 +29,7 @@ def forward_equations(a, v, t):
     return R_pred, M_pred, V_pred
 
 def simulate_observed_data(R_pred, M_pred, V_pred, N):
-    """Simulate observed data using sampling distributions."""
+    """Simulate the observed data using sampling distributions."""
     T_obs = np.random.binomial(N, R_pred)
     R_obs = T_obs / N
     R_obs = np.clip(R_obs, 1e-5, 1 - 1e-5)  # Avoids exact 0 or 1
@@ -55,7 +55,7 @@ def inverse_equations(R_obs, M_obs, V_obs):
     return a_est, v_est, t_est
 
 def run_simulation():
-    """Run the simulate-and-recover process for multiple iterations and sample sizes."""
+    """Run simulate-and-recover for multiple iterations and sample sizes."""
     results = {}
     for N in n_values:
         biases = []
